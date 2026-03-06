@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Zonica — Monthly Expense Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0d0f1a;--s1:#161929;--s2:#1e2235;--border:#2a2f4a;
+  --text:#e8eaf6;--muted:#7b82a8;--accent:#6c63ff;
+  --green:#00d4aa;--red:#ff6584;--yellow:#ffd166;--orange:#ff9800;
+  --home:#4a90d9;--car:#9c7be8;--ess:#00bcd4;--emi:#ff9800;
+  --acad:#e91e63;--gym:#4caf50;--ent:#ab47bc;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:12px;min-width:1200px;}
+
+/* ── HEADER ── */
+header{
+  background:linear-gradient(135deg,#1a1d35,#0d0f1a);
+  border-bottom:1px solid var(--border);
+  padding:10px 18px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.logo{display:flex;align-items:center;gap:9px;}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--green));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo h1{font-size:1rem;font-weight:700;}
+.logo span{font-size:.65rem;color:var(--muted);}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+select.month-sel{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:7px;font-size:.78rem;cursor:pointer;outline:none;}
+.btn{padding:5px 12px;border-radius:7px;font-size:.75rem;cursor:pointer;border:none;font-weight:500;transition:all .15s;}
+.btn-p{background:var(--accent);color:#fff;}.btn-p:hover{background:#5a52e0;}
+.btn-s{background:transparent;border:1px solid var(--border);color:var(--muted);}.btn-s:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── SUMMARY BAR ── */
+.summary-bar{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
+  padding:10px 18px;background:var(--s1);border-bottom:1px solid var(--border);
+}
+.scard{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;position:relative;overflow:hidden;}
+.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.scard.c1::before{background:var(--green);}
+.scard.c2::before{background:var(--red);}
+.scard.c3::before{background:var(--yellow);}
+.scard.c4::before{background:var(--orange);}
+.scard.c5::before{background:#4caf50;}
+.scard label{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:3px;}
+.scard .amt{font-size:1.15rem;font-weight:700;}
+.scard.c1 .amt{color:var(--green);}
+.scard.c2 .amt{color:var(--red);}
+.scard.c3 .amt{color:var(--yellow);}
+.scard.c4 .amt{color:var(--orange);}
+.scard.c5 .amt{color:#4caf50;}
+.scard .sub{font-size:.62rem;color:var(--muted);margin-top:1px;}
+.edit-btn{position:absolute;top:7px;right:7px;background:none;border:1px solid var(--border);color:var(--muted);padding:1px 6px;border-radius:4px;font-size:.58rem;cursor:pointer;}
+.edit-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── MAIN LAYOUT ── */
+.main-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:start;}
+.left-col{border-right:2px solid var(--border);padding:14px 16px;position:sticky;top:52px;max-height:calc(100vh - 52px);overflow-y:auto;}
+.right-col{padding:14px 16px;}
+
+/* ── SECTION HEADERS ── */
+.sec-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;
+}
+.sec-hdr h2{font-size:.82rem;font-weight:700;color:var(--text);}
+.sec-hdr span{font-size:.65rem;color:var(--muted);}
+
+/* ── FIXED CHARGES TABLE ── */
+table.fc{width:100%;border-collapse:collapse;font-size:11.5px;}
+table.fc th{
+  background:#1a1d35;color:var(--muted);font-size:.58rem;text-transform:uppercase;
+  letter-spacing:.6px;padding:6px 8px;text-align:left;border-bottom:2px solid var(--border);
+  white-space:nowrap;position:sticky;top:0;
+}
+table.fc th.r{text-align:right;}
+table.fc td{padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.035);vertical-align:middle;}
+table.fc tr:hover td{background:rgba(108,99,255,.05);}
+
+.cat-cell{font-weight:700;font-size:.68rem;vertical-align:middle;white-space:nowrap;}
+.cat-home{background:rgba(74,144,217,.15);color:var(--home);}
+.cat-car{background:rgba(156,123,232,.15);color:var(--car);}
+.cat-ess{background:rgba(0,188,212,.15);color:var(--ess);}
+.cat-emi{background:rgba(255,152,0,.15);color:var(--emi);}
+.cat-acad{background:rgba(233,30,99,.15);color:var(--acad);}
+.cat-gym{background:rgba(76,175,80,.15);color:var(--gym);}
+.cat-ent{background:rgba(171,71,188,.15);color:var(--ent);}
+
+.tag{display:inline-block;padding:1px 5px;border-radius:3px;font-size:.62rem;font-weight:600;white-space:nowrap;}
+.t-scmu{background:rgba(0,212,170,.12);color:#00d4aa;}
+.t-chase{background:rgba(255,209,102,.12);color:#ffd166;}
+.t-citi{background:rgba(74,144,217,.12);color:#4a90d9;}
+.t-bofa{background:rgba(233,30,99,.12);color:#e91e63;}
+.t-apple{background:rgba(200,200,200,.08);color:#bbb;}
+.t-amz{background:rgba(255,152,0,.12);color:#ff9800;}
+.t-other{background:rgba(108,99,255,.12);color:#a89fff;}
+.t-ancy{background:rgba(0,188,212,.12);color:#00bcd4;}
+.t-rc{background:rgba(76,175,80,.12);color:#4caf50;}
+
+.actual-input{
+  background:rgba(255,255,255,.04);border:1px solid var(--border);
+  color:var(--text);padding:3px 6px;border-radius:4px;width:82px;
+  font-size:11.5px;text-align:right;outline:none;transition:border-color .15s;
+}
+.actual-input:focus{border-color:var(--accent);}
+.actual-input.over{border-color:rgba(255,101,132,.45);color:var(--red);}
+.actual-input.ok{color:var(--green);}
+.exp-val{color:var(--muted);text-align:right;}
+.yearly-tag{color:var(--red);font-size:.65rem;font-weight:600;}
+
+tr.total-row td{
+  background:#1a1d35;font-weight:700;font-size:.78rem;
+  border-top:2px solid var(--border);padding:7px 8px;
+}
+
+/* ── RIGHT SIDE ── */
+/* Summary mini */
+.mini-summary{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px;
+}
+.ms-card{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;}
+.ms-card label{font-size:.56rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:2px;}
+.ms-card .v{font-size:.95rem;font-weight:700;}
+.ms-card.gr .v{color:var(--green);}
+.ms-card.rd .v{color:var(--red);}
+.ms-card.yl .v{color:var(--yellow);}
+
+/* Cards table */
+table.ct{width:100%;border-collapse:collapse;font-size:11.5px;}
+table.ct th{
+  background:#1a1d35;color:var(--muted);font-size:.57rem;text-transform:uppercase;
+  letter-spacing:.5px;padding:6px 7px;text-align:center;border-bottom:2px solid var(--border);
+  white-space:nowrap;
+}
+table.ct th:first-child{text-align:left;}
+table.ct td{padding:4px 7px;border-bottom:1px solid rgba(255,255,255,.035);text-align:center;vertical-align:middle;}
+table.ct td:first-child{text-align:left;}
+table.ct tr:hover td{background:rgba(108,99,255,.05);}
+
+.card-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;flex-shrink:0;}
+.card-name{font-weight:600;font-size:.75rem;display:flex;align-items:center;}
+.due-badge{font-size:.65rem;color:var(--muted);}
+.week-input{
+  background:rgba(255,255,255,.04);border:1px solid var(--border);
+  color:var(--text);padding:2px 5px;border-radius:4px;width:65px;
+  font-size:11.5px;text-align:right;outline:none;transition:border-color .15s;
+}
+.week-input:focus{border-color:var(--accent);}
+.ct-total{font-weight:700;color:var(--yellow);}
+tr.ct-foot td{background:#1a1d35;font-weight:700;border-top:2px solid var(--border);padding:6px 7px;}
+
+/* ── BOTTOM SECTION (removed) ── */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+
+/* Category splitter */
+table.sp{width:100%;border-collapse:collapse;font-size:11.5px;}
+table.sp th{
+  background:#1a1d35;color:var(--muted);font-size:.57rem;text-transform:uppercase;
+  letter-spacing:.5px;padding:6px 8px;text-align:left;border-bottom:2px solid var(--border);
+}
+table.sp th:not(:first-child){text-align:right;}
+table.sp td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.035);vertical-align:middle;}
+table.sp td:not(:first-child){text-align:right;}
+table.sp tr:hover td{background:rgba(108,99,255,.05);}
+tr.sp-foot td{background:#1a1d35;font-weight:700;border-top:2px solid var(--border);padding:6px 8px;}
+.sp-input{
+  background:rgba(255,255,255,.04);border:1px solid var(--border);
+  color:var(--text);padding:3px 6px;border-radius:4px;width:80px;
+  font-size:11.5px;text-align:right;outline:none;transition:border-color .15s;
+}
+.sp-input:focus{border-color:var(--accent);}
+
+/* Charts */
+.chart-box{background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:14px;}
+.chart-box h3{font-size:.75rem;font-weight:600;margin-bottom:10px;}
+.chart-wrap{position:relative;max-width:180px;margin:0 auto;}
+.chart-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;}
+.chart-center .big{font-size:.9rem;font-weight:700;}
+.chart-center .sm{font-size:.58rem;color:var(--muted);}
+.legend{margin-top:10px;display:flex;flex-direction:column;gap:5px;}
+.leg-row{display:flex;align-items:center;justify-content:space-between;font-size:.68rem;}
+.leg-l{display:flex;align-items:center;gap:5px;}
+.leg-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.leg-name{color:var(--muted);}
+.leg-val{font-weight:600;}
+.leg-bar-wrap{height:2px;background:var(--border);border-radius:2px;margin-top:1px;overflow:hidden;}
+.leg-bar{height:100%;border-radius:2px;transition:width .4s ease;}
+
+/* ── MODAL ── */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-ov.open{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:20px;width:90%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:su .18s ease;}
+@keyframes su{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal h3{font-size:.92rem;margin-bottom:14px;}
+.fg{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;}
+.fg label{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.fg input,.fg select{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:7px 9px;border-radius:7px;font-size:.8rem;outline:none;transition:border-color .15s;}
+.fg input:focus,.fg select:focus{border-color:var(--accent);}
+.f-act{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:16px;right:16px;background:var(--s2);border:1px solid var(--border);border-left:3px solid var(--green);padding:9px 14px;border-radius:8px;font-size:.75rem;z-index:300;transform:translateX(120%);transition:transform .25s ease;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.toast.show{transform:translateX(0);}
+
+/* divider label */
+.section-label{
+  font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  color:var(--muted);padding:7px 18px;background:rgba(108,99,255,.06);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+}
+.alloc-note{font-size:.65rem;color:var(--muted);padding:0 0 8px 0;}
+.alloc-note strong{color:var(--yellow);}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- SALARY MODAL -->
+<div class="modal-ov" id="mSal">
+  <div class="modal">
+    <h3>✏️ Edit Monthly Income</h3>
+    <div class="fg"><label>Monthly Salary ($)</label><input type="number" id="mSalVal" step="0.01"/></div>
+    <div class="f-act">
+      <button class="btn btn-s" onclick="closeM('mSal')">Cancel</button>
+      <button class="btn btn-p" onclick="saveSal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MONTH MODAL -->
+<div class="modal-ov" id="mMonth">
+  <div class="modal">
+    <h3>➕ New Month</h3>
+    <div class="fg"><label>Month Name</label><input type="text" id="mMonthName" placeholder="e.g. Apr 2026"/></div>
+    <div class="fg"><label>Monthly Income ($)</label><input type="number" id="mMonthSal" placeholder="11300"/></div>
+    <div class="f-act">
+      <button class="btn btn-s" onclick="closeM('mMonth')">Cancel</button>
+      <button class="btn btn-p" onclick="doAddMonth()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">💰</div>
+    <div><h1>Zonica Tracker</h1><span>Monthly Expense Dashboard</span></div>
+  </div>
+  <div class="hdr-right">
+    <select class="month-sel" id="monthSel" onchange="switchMonth(this.value)"></select>
+    <button class="btn btn-p" onclick="openM('mMonth')">+ Month</button>
+  </div>
+</header>
+
+<!-- ══ SUMMARY BAR ══ -->
+<div class="summary-bar">
+  <div class="scard c1">
+    <label>Monthly Income</label>
+    <div class="amt" id="sIncome">$0</div>
+    <div class="sub">Total CIH / 12</div>
+    <button class="edit-btn" onclick="openEditSal()">Edit</button>
+  </div>
+  <div class="scard c2">
+    <label>Fixed Expenses</label>
+    <div class="amt" id="sFixed">$0</div>
+    <div class="sub" id="sFixedPct">0% of income</div>
+  </div>
+  <div class="scard c3">
+    <label>Card Spendings</label>
+    <div class="amt" id="sCards">$0</div>
+    <div class="sub" id="sCardsPct">0% of income</div>
+  </div>
+  <div class="scard c4">
+    <label>CTRL Spend</label>
+    <div class="amt" id="sCtrl">$0</div>
+    <div class="sub">Fixed + Cards</div>
+  </div>
+  <div class="scard c5">
+    <label>Rem to Spend</label>
+    <div class="amt" id="sRem">$0</div>
+    <div class="sub" id="sRemPct">0% remaining</div>
+  </div>
+</div>
+
+<!-- ══ TOP SECTION: LEFT = FIXED CHARGES | RIGHT = CARDS ══ -->
+<div class="main-wrap">
+
+  <!-- LEFT: Fixed Charges -->
+  <div class="left-col">
+    <div class="sec-hdr">
+      <h2 id="fixedTitle">Mar 2026 — Fixed Charges</h2>
+      <span>Click <strong style="color:var(--accent)">Actual</strong> to edit</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="fc" id="fcTable">
+        <thead>
+          <tr>
+            <th style="width:80px">Category</th>
+            <th>Expense / Savings</th>
+            <th>Mode</th>
+            <th style="width:52px;text-align:center">Date</th>
+            <th>Bank</th>
+            <th class="r" style="width:80px">Expected</th>
+            <th class="r" style="width:90px">Actual</th>
+          </tr>
+        </thead>
+        <tbody id="fcBody"></tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="5" style="text-align:right;color:var(--muted);font-size:.65rem;text-transform:uppercase;letter-spacing:.5px">TOTAL</td>
+            <td style="text-align:right;color:var(--yellow)" id="totalExp">$0</td>
+            <td style="text-align:right;color:var(--orange)" id="totalAct">$0</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT: Summary + Cards -->
+  <div class="right-col">
+    <!-- Mini summary -->
+    <div class="mini-summary">
+      <div class="ms-card gr"><label>Salary</label><div class="v" id="ms-sal">$0</div></div>
+      <div class="ms-card rd"><label>Spendings</label><div class="v" id="ms-spend">$0</div></div>
+      <div class="ms-card yl"><label>Remaining</label><div class="v" id="ms-rem">$0</div></div>
+    </div>
+
+    <div class="sec-hdr" style="margin-top:4px">
+      <h2>Credit Card Transactions</h2>
+      <span style="color:var(--muted)">Enter weekly amounts manually</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="ct" id="ctTable">
+        <thead>
+          <tr>
+            <th style="min-width:145px;text-align:left">Card</th>
+            <th style="width:42px">Due</th>
+            <th style="width:72px">Paid</th>
+            <th style="width:68px" id="wh1">Mar01</th>
+            <th style="width:68px" id="wh2">Mar08</th>
+            <th style="width:68px" id="wh3">Mar15</th>
+            <th style="width:68px" id="wh4">Mar22</th>
+            <th style="width:75px">Total</th>
+          </tr>
+        </thead>
+        <tbody id="ctBody"></tbody>
+        <tfoot id="ctFoot"></tfoot>
+      </table>
+    </div>
+
+    <!-- Categorize Card Spending -->
+    <div class="sec-hdr" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+      <h2>📊 Categorize Card Spending</h2>
+      <span style="color:var(--muted)">Total: <strong id="catCardTotal" style="color:var(--yellow)">$0</strong> &nbsp;·&nbsp; Allocated: <strong id="catAllocated" style="color:var(--green)">$0</strong> &nbsp;·&nbsp; Unallocated: <strong id="catUnalloc" style="color:var(--red)">$0</strong></span>
+    </div>
+    <table class="sp" id="spTable">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th style="text-align:right">Amount ($)</th>
+          <th style="text-align:right">% of Cards</th>
+          <th style="text-align:right">% of Income</th>
+        </tr>
+      </thead>
+      <tbody id="spBody"></tbody>
+      <tfoot>
+        <tr class="sp-foot">
+          <td>Total Allocated</td>
+          <td style="text-align:right;color:var(--green)" id="spTotalAmt">$0</td>
+          <td style="text-align:right;color:var(--muted)" id="spTotalPct">0%</td>
+          <td style="text-align:right;color:var(--muted)" id="spTotalInc">0%</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- Two Pie Charts side by side -->
+    <div class="charts-row">
+      <div class="chart-box">
+        <h3>📊 Income vs Spendings</h3>
+        <div class="chart-wrap">
+          <canvas id="pie1"></canvas>
+          <div class="chart-center">
+            <div class="big" id="pie1Center">$0</div>
+            <div class="sm">income</div>
+          </div>
+        </div>
+        <div class="legend" id="pie1Legend"></div>
+      </div>
+      <div class="chart-box">
+        <h3>🥧 Remaining by Category</h3>
+        <div class="chart-wrap">
+          <canvas id="pie2"></canvas>
+          <div class="chart-center">
+            <div class="big" id="pie2Center">$0</div>
+            <div class="sm">categorized</div>
+          </div>
+        </div>
+        <div class="legend" id="pie2Legend"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATIC DATA
+// ═══════════════════════════════════════════
+const FIXED_ROWS = [
+  ['Home -4670','cat-home','Mortgage','Auto payment','01','SCMU','t-scmu',3510.87],
+  ['','cat-home','Property Tax','Auto payment','01','SCMU','t-scmu',1192.91],
+  ['','cat-home','HOA','Auto payment','11','SCMU','t-scmu',42.00],
+  ['','cat-home','COT - Water/sewage','Auto payment','22','SCMU','t-scmu',180.00],
+  ['','cat-home','Solar EMI','Auto payment','12','SCMU','t-scmu',249.24],
+  ['','cat-home','Geico - Home Insurance','Yearly (1417$)','—','—','t-other',0.00],
+  ['','cat-home','Ring Home protection','Yearly (200$)','APRIL','—','t-other',0.00],
+  ['','cat-home','FA - Home Warranty','Auto payment','18','CHASE CC','t-chase',68.00],
+  ['CAR','cat-car','Tesla EMI','Auto payment','05','SCMU','t-scmu',599.28],
+  ['','cat-car','Tesla connectivity','Auto payment','21','CITI CC','t-citi',9.99],
+  ['','cat-car','Geico Car Insurance','Auto payment','27','CHASE CC','t-chase',318.00],
+  ['','cat-car','Pallisade EMI','Auto payment','—','BOFA','t-bofa',933.50],
+  ['','cat-car','Tesla wash','Auto payment','23','Citi CC','t-citi',23.00],
+  ['','cat-car','Honda wash','Auto payment','03','Citi CC','t-citi',23.00],
+  ['Essentials','cat-ess','PGE (Prev month Bill)','Auto payment','12','SCMU','t-scmu',250.00],
+  ['','cat-ess','Comcast','Auto payment','12','ANCY BOFA','t-ancy',71.25],
+  ['','cat-ess','T-mobile3','Auto payment','18','CHASE CC','t-chase',55.00],
+  ['','cat-ess','RSVD','Auto payment','—','—','t-other',0.00],
+  ['','cat-ess','Clark Pest control','Auto payment','23','RC BOFA','t-rc',103.00],
+  ['','cat-ess','Gardening','Manual','Random','BOFA Checking','t-ancy',50.00],
+  ['','cat-ess','CVS care pass','Auto payment','01','AMZ CC','t-amz',5.41],
+  ['Purchases EMI','cat-emi','Apple Iphone upgrade','Auto payment','—','Apple','t-apple',77.83],
+  ['','cat-emi','','','','','t-other',0.00],
+  ['','cat-emi','','','','','t-other',0.00],
+  ['Academic & Sports','cat-acad','Chat GPT','Auto payment','06','—','t-other',20.00],
+  ['','cat-acad','Grammarly','Yearly (108$)','Yearly','Apple CC','t-apple',0.00],
+  ['','cat-acad','Zoey Gymnastics','Manual','—','—','t-other',0.00],
+  ['','cat-acad','Zoey Bhanzu','Manual','—','—','t-other',0.00],
+  ['','cat-acad','Zoey Swimming','Auto payment','01','Ancy chase CC','t-ancy',251.50],
+  ['','cat-acad','Zoey Curie (6months 900)','Yearly (1830$)','—','—','t-other',153.00],
+  ['Gym/Stocks','cat-gym','Stocks mem','Auto payment','15','Apple','t-apple',20.00],
+  ['','cat-gym','Stocks mem','Auto payment','15','CITI CC','t-citi',20.00],
+  ['Entertainment','cat-ent','Jones Cinemark','Auto payment','11','CITI CC','t-citi',12.99],
+  ['','cat-ent','Ancy Cinemark','Auto payment','11','ANCY BOFA','t-ancy',12.99],
+  ['','cat-ent','Netflix','Auto payment','3','CHASE CC','t-chase',24.99],
+  ['','cat-ent','Youtube premium','Auto payment','14','CHASE CC','t-chase',22.99],
+];
+
+const DEFAULT_CARDS = [
+  {id:'c1', name:'Apple (Day to day)',        color:'#aaa',    due:'30th'},
+  {id:'c2', name:'BOFA (Door dash)',           color:'#e91e63', due:'5th'},
+  {id:'c3', name:'B-Spirit (T-wash, Gram…)',  color:'#4a90d9', due:'9th'},
+  {id:'c4', name:'B-Royal Caribbean',         color:'#00bcd4', due:'1st'},
+  {id:'c5', name:'Citi',                      color:'#00bcd4', due:'17th'},
+  {id:'c6', name:'Chase-Amazon',              color:'#ffd166', due:'7th'},
+  {id:'c7', name:'C-united (Lyca)',           color:'#7b68ee', due:'25th'},
+  {id:'c8', name:'Chase freedom (-2000)',     color:'#ff9800', due:'19th'},
+  {id:'c9', name:'Oldnavy CC',               color:'#ab47bc', due:'23rd'},
+  {id:'c10',name:'Ancy BOFA CC',             color:'#00d4aa', due:'24th'},
+  {id:'c11',name:'Ancy Chase CC',            color:'#6c63ff', due:'28th'},
+  {id:'c12',name:'BB CC',                    color:'#ff6584', due:'—'},
+  {id:'c13',name:'Misc',                     color:'#7b82a8', due:'—'},
+];
+
+const DEFAULT_CATS = [
+  {id:'food', name:'Food Out',          color:'#e91e63', icon:'🍔', amt:0},
+  {id:'groc', name:'Groceries',         color:'#4caf50', icon:'🛒', amt:0},
+  {id:'amz',  name:'Amazon',            color:'#ff9800', icon:'📦', amt:0},
+  {id:'gas',  name:'Car Gas',           color:'#4a90d9', icon:'⛽', amt:0},
+  {id:'ent',  name:'Entertainment',     color:'#ab47bc', icon:'🎬', amt:0},
+  {id:'cloth',name:'Clothing',          color:'#7b68ee', icon:'👗', amt:0},
+  {id:'hlth', name:'Health/Pharmacy',   color:'#00d4aa', icon:'💊', amt:0},
+  {id:'other',name:'Other',             color:'#7b82a8', icon:'📌', amt:0},
+];
+
+function mkCardData(){ return DEFAULT_CARDS.map(c=>({...c,paid:0,w1:0,w2:0,w3:0,w4:0})); }
+function mkCatData(){ return DEFAULT_CATS.map(c=>({...c,amt:0})); }
+function buildDefaultMonth(salary){
+  return {
+    salary,
+    actuals: FIXED_ROWS.map(r=>r[7]),
+    cards: mkCardData(),
+    cats: mkCatData(),
+    weekLabels:['Mar01','Mar08','Mar15','Mar22'],
+  };
+}
+
+function loadState(){
+  try{
+    const s=localStorage.getItem('zonicaV4');
+    if(s){const p=JSON.parse(s);if(p&&p.months&&Object.keys(p.months).length>0)return p;}
+  }catch(e){}
+  return {currentMonth:'Mar 2026',months:{'Mar 2026':buildDefaultMonth(11300)}};
+}
+
+let S=loadState();
+function save(){try{localStorage.setItem('zonicaV4',JSON.stringify(S));}catch(e){}}
+function fmt(n){return '$'+(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function pct(a,b){return b>0?Math.round(a/b*100):0;}
+
+function getFixedTotal(){return S.months[S.currentMonth].actuals.reduce((s,a)=>s+(parseFloat(a)||0),0);}
+function getCardTotal(){
+  return S.months[S.currentMonth].cards.reduce((s,c)=>
+    s+(parseFloat(c.paid)||0)+(parseFloat(c.w1)||0)+(parseFloat(c.w2)||0)+(parseFloat(c.w3)||0)+(parseFloat(c.w4)||0),0);
+}
+function getCatTotal(){return S.months[S.currentMonth].cats.reduce((s,c)=>s+(parseFloat(c.amt)||0),0);}
+
+// ── MONTH ──
+function populateMonthSel(){
+  const sel=document.getElementById('monthSel');
+  sel.innerHTML='';
+  Object.keys(S.months).forEach(m=>{
+    const o=document.createElement('option');
+    o.value=m;o.textContent=m;
+    if(m===S.currentMonth)o.selected=true;
+    sel.appendChild(o);
+  });
+}
+function switchMonth(m){S.currentMonth=m;save();render();}
+function doAddMonth(){
+  const name=document.getElementById('mMonthName').value.trim();
+  const sal=parseFloat(document.getElementById('mMonthSal').value)||11300;
+  if(!name){toast('Enter a month name');return;}
+  if(S.months[name]){toast('Month already exists');return;}
+  S.months[name]=buildDefaultMonth(sal);
+  S.currentMonth=name;
+  save();closeM('mMonth');populateMonthSel();render();
+  toast('✅ '+name+' created!');
+}
+
+// ── SALARY ──
+function openEditSal(){document.getElementById('mSalVal').value=S.months[S.currentMonth].salary;openM('mSal');}
+function saveSal(){
+  const v=parseFloat(document.getElementById('mSalVal').value);
+  if(!v||v<=0){toast('Enter valid amount');return;}
+  S.months[S.currentMonth].salary=v;
+  save();closeM('mSal');render();toast('✅ Income updated!');
+}
+
+// ── SUMMARY ──
+function renderSummary(){
+  const m=S.months[S.currentMonth];
+  const sal=m.salary,fixed=getFixedTotal(),cards=getCardTotal();
+  const ctrl=fixed+cards,rem=sal-ctrl;
+  document.getElementById('sIncome').textContent=fmt(sal);
+  document.getElementById('sFixed').textContent=fmt(fixed);
+  document.getElementById('sFixedPct').textContent=pct(fixed,sal)+'% of income';
+  document.getElementById('sCards').textContent=fmt(cards);
+  document.getElementById('sCardsPct').textContent=pct(cards,sal)+'% of income';
+  document.getElementById('sCtrl').textContent=fmt(ctrl);
+  document.getElementById('sRem').textContent=fmt(rem);
+  document.getElementById('sRemPct').textContent=pct(rem,sal)+'% remaining';
+  document.getElementById('ms-sal').textContent=fmt(sal);
+  document.getElementById('ms-spend').textContent=fmt(ctrl);
+  document.getElementById('ms-rem').textContent=fmt(rem);
+}
+
+// ── FIXED TABLE ──
+function renderFixed(){
+  const m=S.months[S.currentMonth];
+  document.getElementById('fixedTitle').textContent=S.currentMonth+' — Fixed Charges';
+  const tbody=document.getElementById('fcBody');
+  tbody.innerHTML='';
+  let tExp=0,tAct=0;
+  FIXED_ROWS.forEach((row,i)=>{
+    const[cat,catClass,name,mode,date,bank,bankClass,expected]=row;
+    const actual=parseFloat(m.actuals[i])||0;
+    tExp+=expected;tAct+=actual;
+    const over=actual>expected&&expected>0;
+    const isYearly=mode.includes('Yearly');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="cat-cell ${catClass}">${cat}</td>
+      <td style="font-weight:${name?'500':'300'};color:${name?'var(--text)':'transparent'}">${name||'·'}</td>
+      <td class="${isYearly?'yearly-tag':''}" style="color:${isYearly?'var(--red)':'var(--muted)'};font-size:.65rem">${mode}</td>
+      <td style="text-align:center;color:var(--muted);font-size:.65rem">${date}</td>
+      <td><span class="tag ${bankClass}">${bank}</span></td>
+      <td class="exp-val">${expected>0?fmt(expected):'<span style="color:var(--border)">—</span>'}</td>
+      <td style="text-align:right">
+        <input class="actual-input ${over?'over':'ok'}" type="number" step="0.01"
+          value="${actual>0?actual:''}"
+          placeholder="${expected>0?expected.toFixed(2):'0.00'}"
+          data-idx="${i}"
+          onchange="updateActual(${i},this.value)"
+          oninput="updateActual(${i},this.value)"/>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('totalExp').textContent=fmt(tExp);
+  document.getElementById('totalAct').textContent=fmt(tAct);
+}
+
+function updateActual(idx,val){
+  S.months[S.currentMonth].actuals[idx]=parseFloat(val)||0;
+  save();
+  const tAct=getFixedTotal();
+  document.getElementById('totalAct').textContent=fmt(tAct);
+  const exp=FIXED_ROWS[idx][7];
+  const act=parseFloat(val)||0;
+  const inputs=document.querySelectorAll('.actual-input');
+  if(inputs[idx])inputs[idx].className='actual-input '+(act>exp&&exp>0?'over':'ok');
+  renderSummary();renderPie1();
+}
+
+// ── CARDS TABLE ──
+function renderCards(){
+  const m=S.months[S.currentMonth];
+  const wl=m.weekLabels||['Mar01','Mar08','Mar15','Mar22'];
+  ['wh1','wh2','wh3','wh4'].forEach((id,i)=>{document.getElementById(id).textContent=wl[i];});
+  const tbody=document.getElementById('ctBody');
+  const tfoot=document.getElementById('ctFoot');
+  tbody.innerHTML='';
+  let sP=0,s1=0,s2=0,s3=0,s4=0;
+  m.cards.forEach(card=>{
+    const p=parseFloat(card.paid)||0,w1=parseFloat(card.w1)||0,w2=parseFloat(card.w2)||0,
+          w3=parseFloat(card.w3)||0,w4=parseFloat(card.w4)||0;
+    const tot=p+w1+w2+w3+w4;
+    sP+=p;s1+=w1;s2+=w2;s3+=w3;s4+=w4;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div class="card-name"><span class="card-dot" style="background:${card.color}"></span>${card.name}</div></td>
+      <td class="due-badge">${card.due}</td>
+      <td><input class="week-input" type="number" step="0.01" value="${p||''}" placeholder="0"
+        onchange="updateCard('${card.id}','paid',this.value)" oninput="updateCard('${card.id}','paid',this.value)"/></td>
+      <td><input class="week-input" type="number" step="0.01" value="${w1||''}" placeholder="0"
+        onchange="updateCard('${card.id}','w1',this.value)" oninput="updateCard('${card.id}','w1',this.value)"/></td>
+      <td><input class="week-input" type="number" step="0.01" value="${w2||''}" placeholder="0"
+        onchange="updateCard('${card.id}','w2',this.value)" oninput="updateCard('${card.id}','w2',this.value)"/></td>
+      <td><input class="week-input" type="number" step="0.01" value="${w3||''}" placeholder="0"
+        onchange="updateCard('${card.id}','w3',this.value)" oninput="updateCard('${card.id}','w3',this.value)"/></td>
+      <td><input class="week-input" type="number" step="0.01" value="${w4||''}" placeholder="0"
+        onchange="updateCard('${card.id}','w4',this.value)" oninput="updateCard('${card.id}','w4',this.value)"/></td>
+      <td class="ct-total">${tot>0?fmt(tot):'—'}</td>`;
+    tbody.appendChild(tr);
+  });
+  const grand=sP+s1+s2+s3+s4;
+  const fixed=getFixedTotal();
+  const ctrl=fixed+grand;
+  const rem=m.salary-ctrl;
+  tfoot.innerHTML=`
+    <tr class="ct-foot">
+      <td colspan="2" style="text-align:right;color:var(--muted);font-size:.6rem;text-transform:uppercase">Totals</td>
+      <td style="color:var(--green);font-weight:700">${fmt(sP)}</td>
+      <td style="color:var(--yellow);font-weight:700">${fmt(s1)}</td>
+      <td style="color:var(--yellow);font-weight:700">${fmt(s2)}</td>
+      <td style="color:var(--yellow);font-weight:700">${fmt(s3)}</td>
+      <td style="color:var(--yellow);font-weight:700">${fmt(s4)}</td>
+      <td class="ct-total">${fmt(grand)}</td>
+    </tr>
+    <tr class="ct-foot">
+      <td colspan="6" style="text-align:right;color:var(--muted);font-size:.65rem">CTRL SPEND (Fixed + Cards)</td>
+      <td colspan="2" style="text-align:right;color:var(--orange);font-weight:700">${fmt(ctrl)}</td>
+    </tr>
+    <tr class="ct-foot">
+      <td colspan="6" style="text-align:right;color:var(--muted);font-size:.65rem">Rem to Spend</td>
+      <td colspan="2" style="text-align:right;color:${rem>=0?'var(--green)':'var(--red)'};font-weight:700">${fmt(rem)}</td>
+    </tr>`;
+}
+
+function updateCard(id,field,val){
+  const card=S.months[S.currentMonth].cards.find(c=>c.id===id);
+  if(!card)return;
+  card[field]=parseFloat(val)||0;
+  save();renderSummary();renderCards();renderPie1();renderCatMeta();
+}
+
+// ── CATEGORIES ──
+function renderCats(){
+  const m=S.months[S.currentMonth];
+  const cardTotal=getCardTotal();
+  const catTotal=getCatTotal();
+  const unalloc=Math.max(0,cardTotal-catTotal);
+  document.getElementById('catCardTotal').textContent=fmt(cardTotal);
+  document.getElementById('catAllocated').textContent=fmt(catTotal);
+  document.getElementById('catUnalloc').textContent=fmt(unalloc);
+  const tbody=document.getElementById('spBody');
+  tbody.innerHTML='';
+  m.cats.forEach(cat=>{
+    const amt=parseFloat(cat.amt)||0;
+    const pCards=cardTotal>0?Math.round(amt/cardTotal*100):0;
+    const pInc=m.salary>0?Math.round(amt/m.salary*100):0;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${cat.color};margin-right:6px"></span>
+        ${cat.icon} ${cat.name}
+      </td>
+      <td style="text-align:right">
+        <input class="sp-input" type="number" step="0.01" value="${amt||''}" placeholder="0.00"
+          onchange="updateCat('${cat.id}',this.value)" oninput="updateCat('${cat.id}',this.value)"/>
+      </td>
+      <td style="text-align:right;color:var(--muted)">${pCards}%</td>
+      <td style="text-align:right;color:var(--muted)">${pInc}%</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('spTotalAmt').textContent=fmt(catTotal);
+  document.getElementById('spTotalPct').textContent=pct(catTotal,cardTotal)+'%';
+  document.getElementById('spTotalInc').textContent=pct(catTotal,m.salary)+'%';
+}
+
+function renderCatMeta(){
+  const cardTotal=getCardTotal();
+  const catTotal=getCatTotal();
+  document.getElementById('catCardTotal').textContent=fmt(cardTotal);
+  document.getElementById('catAllocated').textContent=fmt(catTotal);
+  document.getElementById('catUnalloc').textContent=fmt(Math.max(0,cardTotal-catTotal));
+  // refresh % columns
+  const m=S.months[S.currentMonth];
+  const rows=document.querySelectorAll('#spBody tr');
+  m.cats.forEach((cat,i)=>{
+    if(!rows[i])return;
+    const amt=parseFloat(cat.amt)||0;
+    const tds=rows[i].querySelectorAll('td');
+    if(tds[2])tds[2].textContent=(cardTotal>0?Math.round(amt/cardTotal*100):0)+'%';
+    if(tds[3])tds[3].textContent=(m.salary>0?Math.round(amt/m.salary*100):0)+'%';
+  });
+  document.getElementById('spTotalPct').textContent=pct(catTotal,cardTotal)+'%';
+  document.getElementById('spTotalInc').textContent=pct(catTotal,m.salary)+'%';
+}
+
+function updateCat(id,val){
+  const cat=S.months[S.currentMonth].cats.find(c=>c.id===id);
+  if(!cat)return;
+  cat.amt=parseFloat(val)||0;
+  save();
+  document.getElementById('spTotalAmt').textContent=fmt(getCatTotal());
+  renderCatMeta();renderPie2();renderSummary();
+}
+
+// ── PIE 1: Income vs Spendings ──
+let pie1=null;
+function renderPie1(){
+  const m=S.months[S.currentMonth];
+  const sal=m.salary,fixed=getFixedTotal(),cards=getCardTotal();
+  const rem=Math.max(0,sal-fixed-cards);
+  const labels=['Fixed Expenses','Card Spendings','Remaining'];
+  const vals=[fixed,cards,rem];
+  const colors=['#ff6584','#ff9800','#00d4aa'];
+  document.getElementById('pie1Center').textContent=fmt(sal);
+  if(pie1)pie1.destroy();
+  const ctx=document.getElementById('pie1').getContext('2d');
+  pie1=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:colors,borderColor:'#1e2235',borderWidth:3,hoverOffset:6}]},
+    options:{cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)} (${Math.round(c.raw/sal*100)}%)`}}},animation:{duration:400}}
+  });
+  const leg=document.getElementById('pie1Legend');
+  leg.innerHTML='';
+  labels.forEach((l,i)=>{
+    const p=sal>0?Math.round(vals[i]/sal*100):0;
+    leg.innerHTML+=`
+      <div class="leg-row">
+        <div class="leg-l"><div class="leg-dot" style="background:${colors[i]}"></div><span class="leg-name">${l}</span></div>
+        <span class="leg-val">${fmt(vals[i])}</span>
+      </div>
+      <div class="leg-bar-wrap"><div class="leg-bar" style="width:${p}%;background:${colors[i]}"></div></div>`;
+  });
+}
+
+// ── PIE 2: Category breakdown ──
+let pie2=null;
+function renderPie2(){
+  const m=S.months[S.currentMonth];
+  const cats=m.cats.filter(c=>(parseFloat(c.amt)||0)>0);
+  const labels=cats.map(c=>c.icon+' '+c.name);
+  const vals=cats.map(c=>parseFloat(c.amt)||0);
+  const colors=cats.map(c=>c.color);
+  const total=vals.reduce((a,b)=>a+b,0);
+  document.getElementById('pie2Center').textContent=fmt(total);
+  if(pie2)pie2.destroy();
+  const leg=document.getElementById('pie2Legend');
+  if(total===0){
+    leg.innerHTML='<div style="text-align:center;color:var(--muted);font-size:.68rem;padding:16px 0">Enter amounts above to see chart</div>';
+    return;
+  }
+  const ctx=document.getElementById('pie2').getContext('2d');
+  pie2=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:colors,borderColor:'#1e2235',borderWidth:3,hoverOffset:6}]},
+    options:{cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)} (${Math.round(c.raw/total*100)}%)`}}},animation:{duration:400}}
+  });
+  leg.innerHTML='';
+  labels.forEach((l,i)=>{
+    const p=total>0?Math.round(vals[i]/total*100):0;
+    leg.innerHTML+=`
+      <div class="leg-row">
+        <div class="leg-l"><div class="leg-dot" style="background:${colors[i]}"></div><span class="leg-name">${l}</span></div>
+        <span class="leg-val">${fmt(vals[i])}</span>
+      </div>
+      <div class="leg-bar-wrap"><div class="leg-bar" style="width:${p}%;background:${colors[i]}"></div></div>`;
+  });
+}
+
+// ── MODAL ──
+function openM(id){document.getElementById(id).classList.add('open');}
+function closeM(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── RENDER ALL ──
+function render(){
+  populateMonthSel();
+  renderSummary();
+  renderFixed();
+  renderCards();
+  renderCats();
+  renderPie1();
+  renderPie2();
+}
+render();
+</script>
+</body>
+</html>
