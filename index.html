@@ -105,6 +105,14 @@ table.fc tr:hover td{background:rgba(108,99,255,.05);}
   color:var(--text);padding:3px 6px;border-radius:4px;width:82px;
   font-size:11.5px;text-align:right;outline:none;transition:border-color .15s;
 }
+.fc-input{
+  background:transparent;border:1px solid transparent;
+  color:var(--text);padding:2px 4px;border-radius:4px;
+  font-size:11.5px;outline:none;transition:border-color .15s;width:100%;
+}
+.fc-input:hover{border-color:var(--border);}
+.fc-input:focus{border-color:var(--accent);background:rgba(255,255,255,.04);}
+.fc-input.num{text-align:right;width:80px;}
 .actual-input:focus{border-color:var(--accent);}
 .actual-input.over{border-color:rgba(255,101,132,.45);color:var(--red);}
 .actual-input.ok{color:var(--green);}
@@ -145,7 +153,7 @@ table.ct tr:hover td{background:rgba(108,99,255,.05);}
 .due-badge{font-size:.65rem;color:var(--muted);}
 .week-input{
   background:rgba(255,255,255,.04);border:1px solid var(--border);
-  color:var(--text);padding:2px 5px;border-radius:4px;width:65px;
+  color:var(--text);padding:2px 5px;border-radius:4px;width:72px;
   font-size:11.5px;text-align:right;outline:none;transition:border-color .15s;
 }
 .week-input:focus{border-color:var(--accent);}
@@ -293,7 +301,7 @@ tr.sp-foot td{background:#1a1d35;font-weight:700;border-top:2px solid var(--bord
   <div class="left-col">
     <div class="sec-hdr">
       <h2 id="fixedTitle">Mar 2026 — Fixed Charges</h2>
-      <span>Click <strong style="color:var(--accent)">Actual</strong> to edit</span>
+      <span>All cells are <strong style="color:var(--accent)">editable</strong></span>
     </div>
     <div style="overflow-x:auto">
       <table class="fc" id="fcTable">
@@ -340,11 +348,12 @@ tr.sp-foot td{background:#1a1d35;font-weight:700;border-top:2px solid var(--bord
             <th style="min-width:145px;text-align:left">Card</th>
             <th style="width:42px">Due</th>
             <th style="width:72px">Paid</th>
-            <th style="width:68px" id="wh1">Mar01</th>
-            <th style="width:68px" id="wh2">Mar08</th>
-            <th style="width:68px" id="wh3">Mar15</th>
-            <th style="width:68px" id="wh4">Mar22</th>
-            <th style="width:75px">Total</th>
+            <th style="width:72px" id="wh1">Week01</th>
+            <th style="width:72px" id="wh2">Week02</th>
+            <th style="width:72px" id="wh3">Week03</th>
+            <th style="width:72px" id="wh4">Week04</th>
+            <th style="width:72px" id="wh5">Week05</th>
+            <th style="width:80px">Total</th>
           </tr>
         </thead>
         <tbody id="ctBody"></tbody>
@@ -476,7 +485,7 @@ const DEFAULT_CATS = [
   {id:'other',name:'Other',             color:'#7b82a8', icon:'📌', amt:0},
 ];
 
-function mkCardData(){ return DEFAULT_CARDS.map(c=>({...c,paid:0,w1:0,w2:0,w3:0,w4:0})); }
+function mkCardData(){ return DEFAULT_CARDS.map(c=>({...c,paid:0,w1:0,w2:0,w3:0,w4:0,w5:0})); }
 function mkCatData(){ return DEFAULT_CATS.map(c=>({...c,amt:0})); }
 function buildDefaultMonth(salary){
   return {
@@ -484,7 +493,7 @@ function buildDefaultMonth(salary){
     actuals: FIXED_ROWS.map(r=>r[7]),
     cards: mkCardData(),
     cats: mkCatData(),
-    weekLabels:['Mar01','Mar08','Mar15','Mar22'],
+    weekLabels:['Week01','Week02','Week03','Week04','Week05'],
   };
 }
 
@@ -500,11 +509,20 @@ let S=loadState();
 function save(){try{localStorage.setItem('zonicaV4',JSON.stringify(S));}catch(e){}}
 function fmt(n){return '$'+(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function pct(a,b){return b>0?Math.round(a/b*100):0;}
-
-function getFixedTotal(){return S.months[S.currentMonth].actuals.reduce((s,a)=>s+(parseFloat(a)||0),0);}
+function getFixedTotal(){
+  const m=S.months[S.currentMonth];
+  return m.actuals.reduce((s,v)=>s+(parseFloat(v)||0),0);
+}
+function getFixedExpected(){
+  const m=S.months[S.currentMonth];
+  return FIXED_ROWS.reduce((s,r,i)=>{
+    const exp=m.expecteds&&m.expecteds[i]!=null?m.expecteds[i]:r[7];
+    return s+(parseFloat(exp)||0);
+  },0);
+}
 function getCardTotal(){
   return S.months[S.currentMonth].cards.reduce((s,c)=>
-    s+(parseFloat(c.paid)||0)+(parseFloat(c.w1)||0)+(parseFloat(c.w2)||0)+(parseFloat(c.w3)||0)+(parseFloat(c.w4)||0),0);
+    s+(parseFloat(c.paid)||0)+(parseFloat(c.w1)||0)+(parseFloat(c.w2)||0)+(parseFloat(c.w3)||0)+(parseFloat(c.w4)||0)+(parseFloat(c.w5)||0),0);
 }
 function getCatTotal(){return S.months[S.currentMonth].cats.reduce((s,c)=>s+(parseFloat(c.amt)||0),0);}
 
@@ -568,21 +586,37 @@ function renderFixed(){
   FIXED_ROWS.forEach((row,i)=>{
     const[cat,catClass,name,mode,date,bank,bankClass,expected]=row;
     const actual=parseFloat(m.actuals[i])||0;
-    tExp+=expected;tAct+=actual;
-    const over=actual>expected&&expected>0;
+    const expVal=parseFloat(m.expecteds&&m.expecteds[i]!=null?m.expecteds[i]:expected)||expected;
+    tExp+=expVal;tAct+=actual;
+    const over=actual>expVal&&expVal>0;
     const isYearly=mode.includes('Yearly');
+    const savedName=m.names&&m.names[i]!=null?m.names[i]:name;
+    const savedMode=m.modes&&m.modes[i]!=null?m.modes[i]:mode;
+    const savedDate=m.dates&&m.dates[i]!=null?m.dates[i]:date;
+    const savedBank=m.banks&&m.banks[i]!=null?m.banks[i]:bank;
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td class="cat-cell ${catClass}">${cat}</td>
-      <td style="font-weight:${name?'500':'300'};color:${name?'var(--text)':'transparent'}">${name||'·'}</td>
-      <td class="${isYearly?'yearly-tag':''}" style="color:${isYearly?'var(--red)':'var(--muted)'};font-size:.65rem">${mode}</td>
-      <td style="text-align:center;color:var(--muted);font-size:.65rem">${date}</td>
-      <td><span class="tag ${bankClass}">${bank}</span></td>
-      <td class="exp-val">${expected>0?fmt(expected):'<span style="color:var(--border)">—</span>'}</td>
+      <td><input class="fc-input" value="${savedName}" placeholder="Expense name"
+        onchange="updateFixedCell(${i},'names',this.value)" oninput="updateFixedCell(${i},'names',this.value)"/></td>
+      <td><input class="fc-input" value="${savedMode}" placeholder="Mode"
+        style="color:${isYearly?'var(--red)':'var(--muted)'};font-size:.65rem"
+        onchange="updateFixedCell(${i},'modes',this.value)" oninput="updateFixedCell(${i},'modes',this.value)"/></td>
+      <td style="text-align:center"><input class="fc-input" value="${savedDate}" placeholder="—"
+        style="text-align:center;color:var(--muted);font-size:.65rem;width:40px"
+        onchange="updateFixedCell(${i},'dates',this.value)" oninput="updateFixedCell(${i},'dates',this.value)"/></td>
+      <td><input class="fc-input" value="${savedBank}" placeholder="Bank"
+        style="font-size:.65rem;font-weight:600"
+        onchange="updateFixedCell(${i},'banks',this.value)" oninput="updateFixedCell(${i},'banks',this.value)"/></td>
+      <td style="text-align:right">
+        <input class="actual-input" type="number" step="0.01" value="${expVal>0?expVal:''}"
+          placeholder="0.00" style="color:var(--muted)"
+          onchange="updateFixedExp(${i},this.value)" oninput="updateFixedExp(${i},this.value)"/>
+      </td>
       <td style="text-align:right">
         <input class="actual-input ${over?'over':'ok'}" type="number" step="0.01"
           value="${actual>0?actual:''}"
-          placeholder="${expected>0?expected.toFixed(2):'0.00'}"
+          placeholder="${expVal>0?expVal.toFixed(2):'0.00'}"
           data-idx="${i}"
           onchange="updateActual(${i},this.value)"
           oninput="updateActual(${i},this.value)"/>
@@ -591,6 +625,29 @@ function renderFixed(){
   });
   document.getElementById('totalExp').textContent=fmt(tExp);
   document.getElementById('totalAct').textContent=fmt(tAct);
+}
+
+function updateFixedCell(idx,field,val){
+  const m=S.months[S.currentMonth];
+  if(!m[field])m[field]={};
+  m[field][idx]=val;
+  save();
+}
+
+function updateFixedExp(idx,val){
+  const m=S.months[S.currentMonth];
+  if(!m.expecteds)m.expecteds={};
+  m.expecteds[idx]=parseFloat(val)||0;
+  save();
+  // recalc totals
+  let tExp=0,tAct=0;
+  FIXED_ROWS.forEach((_,i)=>{
+    tExp+=parseFloat(m.expecteds&&m.expecteds[i]!=null?m.expecteds[i]:FIXED_ROWS[i][7])||FIXED_ROWS[i][7];
+    tAct+=parseFloat(m.actuals[i])||0;
+  });
+  document.getElementById('totalExp').textContent=fmt(tExp);
+  document.getElementById('totalAct').textContent=fmt(tAct);
+  renderSummary();renderPie1();
 }
 
 function updateActual(idx,val){
@@ -608,17 +665,17 @@ function updateActual(idx,val){
 // ── CARDS TABLE ──
 function renderCards(){
   const m=S.months[S.currentMonth];
-  const wl=m.weekLabels||['Mar01','Mar08','Mar15','Mar22'];
-  ['wh1','wh2','wh3','wh4'].forEach((id,i)=>{document.getElementById(id).textContent=wl[i];});
+  const wl=m.weekLabels||['Week01','Week02','Week03','Week04','Week05'];
+  ['wh1','wh2','wh3','wh4','wh5'].forEach((id,i)=>{document.getElementById(id).textContent=wl[i];});
   const tbody=document.getElementById('ctBody');
   const tfoot=document.getElementById('ctFoot');
   tbody.innerHTML='';
-  let sP=0,s1=0,s2=0,s3=0,s4=0;
+  let sP=0,s1=0,s2=0,s3=0,s4=0,s5=0;
   m.cards.forEach(card=>{
     const p=parseFloat(card.paid)||0,w1=parseFloat(card.w1)||0,w2=parseFloat(card.w2)||0,
-          w3=parseFloat(card.w3)||0,w4=parseFloat(card.w4)||0;
-    const tot=p+w1+w2+w3+w4;
-    sP+=p;s1+=w1;s2+=w2;s3+=w3;s4+=w4;
+          w3=parseFloat(card.w3)||0,w4=parseFloat(card.w4)||0,w5=parseFloat(card.w5)||0;
+    const tot=p+w1+w2+w3+w4+w5;
+    sP+=p;s1+=w1;s2+=w2;s3+=w3;s4+=w4;s5+=w5;
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td><div class="card-name"><span class="card-dot" style="background:${card.color}"></span>${card.name}</div></td>
@@ -633,10 +690,12 @@ function renderCards(){
         onchange="updateCard('${card.id}','w3',this.value)" oninput="updateCard('${card.id}','w3',this.value)"/></td>
       <td><input class="week-input" type="number" step="0.01" value="${w4||''}" placeholder="0"
         onchange="updateCard('${card.id}','w4',this.value)" oninput="updateCard('${card.id}','w4',this.value)"/></td>
+      <td><input class="week-input" type="number" step="0.01" value="${w5||''}" placeholder="0"
+        onchange="updateCard('${card.id}','w5',this.value)" oninput="updateCard('${card.id}','w5',this.value)"/></td>
       <td class="ct-total">${tot>0?fmt(tot):'—'}</td>`;
     tbody.appendChild(tr);
   });
-  const grand=sP+s1+s2+s3+s4;
+  const grand=sP+s1+s2+s3+s4+s5;
   const fixed=getFixedTotal();
   const ctrl=fixed+grand;
   const rem=m.salary-ctrl;
@@ -648,14 +707,15 @@ function renderCards(){
       <td style="color:var(--yellow);font-weight:700">${fmt(s2)}</td>
       <td style="color:var(--yellow);font-weight:700">${fmt(s3)}</td>
       <td style="color:var(--yellow);font-weight:700">${fmt(s4)}</td>
+      <td style="color:var(--yellow);font-weight:700">${fmt(s5)}</td>
       <td class="ct-total">${fmt(grand)}</td>
     </tr>
     <tr class="ct-foot">
-      <td colspan="6" style="text-align:right;color:var(--muted);font-size:.65rem">CTRL SPEND (Fixed + Cards)</td>
+      <td colspan="7" style="text-align:right;color:var(--muted);font-size:.65rem">CTRL SPEND (Fixed + Cards)</td>
       <td colspan="2" style="text-align:right;color:var(--orange);font-weight:700">${fmt(ctrl)}</td>
     </tr>
     <tr class="ct-foot">
-      <td colspan="6" style="text-align:right;color:var(--muted);font-size:.65rem">Rem to Spend</td>
+      <td colspan="7" style="text-align:right;color:var(--muted);font-size:.65rem">Rem to Spend</td>
       <td colspan="2" style="text-align:right;color:${rem>=0?'var(--green)':'var(--red)'};font-weight:700">${fmt(rem)}</td>
     </tr>`;
 }
