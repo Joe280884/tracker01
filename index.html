@@ -178,8 +178,9 @@ table.sp tr:hover td{background:rgba(108,99,255,.05);}
 tr.sp-foot td{background:#1a1d35;font-weight:700;border-top:2px solid var(--border);padding:6px 8px;}
 .sp-input{
   background:rgba(255,255,255,.04);border:1px solid var(--border);
-  color:var(--text);padding:3px 6px;border-radius:4px;width:80px;
-  font-size:11.5px;text-align:right;outline:none;transition:border-color .15s;
+  color:var(--text);padding:4px 8px;border-radius:4px;width:90px;
+  font-size:13px;text-align:right;outline:none;transition:border-color .15s;
+  box-sizing:border-box;
 }
 .sp-input:focus{border-color:var(--accent);}
 
@@ -600,30 +601,27 @@ function renderFixed(){
     tr.innerHTML=`
       <td class="cat-cell ${catClass}">${cat}</td>
       <td><input class="fc-input" value="${savedName}" placeholder="Expense name"
-        onchange="updateFixedCell(${i},'names',this.value)" oninput="updateFixedCell(${i},'names',this.value)"/></td>
+        onblur="updateFixedCell(${i},'names',this.value)"/></td>
       <td><input class="fc-input" value="${savedMode}" placeholder="Mode"
         style="color:${isYearly?'var(--red)':'var(--muted)'};font-size:.65rem"
-        onchange="updateFixedCell(${i},'modes',this.value)" oninput="updateFixedCell(${i},'modes',this.value)"/></td>
+        onblur="updateFixedCell(${i},'modes',this.value)"/></td>
       <td style="text-align:center"><input class="fc-input" value="${savedDate}" placeholder="—"
         style="text-align:center;color:var(--muted);font-size:.65rem;width:40px"
-        onchange="updateFixedCell(${i},'dates',this.value)" oninput="updateFixedCell(${i},'dates',this.value)"/></td>
+        onblur="updateFixedCell(${i},'dates',this.value)"/></td>
       <td><input class="fc-input" value="${savedBank}" placeholder="Bank"
         style="font-size:.65rem;font-weight:600"
-        onchange="updateFixedCell(${i},'banks',this.value)" oninput="updateFixedCell(${i},'banks',this.value)"/></td>
+        onblur="updateFixedCell(${i},'banks',this.value)"/></td>
       <td style="text-align:right">
         <input class="actual-input" type="text" inputmode="decimal" value="${expVal>0?expVal:''}"
           placeholder="0.00" style="color:var(--muted)"
-          
-          onchange="updateFixedExp(${i},this.value)" oninput="updateFixedExp(${i},this.value)"/>
+          onblur="updateFixedExp(${i},this.value)"/>
       </td>
       <td style="text-align:right">
         <input class="actual-input ${over?'over':'ok'}" type="text" inputmode="decimal"
           value="${actual>0?actual:''}"
           placeholder="${expVal>0?expVal.toFixed(2):'0.00'}"
           data-idx="${i}"
-          
-          onchange="updateActual(${i},this.value)"
-          oninput="updateActual(${i},this.value)"/>
+          onblur="updateActual(${i},this.value)"/>
       </td>`;
     tbody.appendChild(tr);
   });
@@ -684,24 +682,18 @@ function renderCards(){
     tr.innerHTML=`
       <td><div class="card-name"><span class="card-dot" style="background:${card.color}"></span>${card.name}</div></td>
       <td class="due-badge">${card.due}</td>
-      <td><input class="week-input" type="text" inputmode="decimal" value="${p||''}" placeholder="0"
-        
-        onchange="updateCard('${card.id}','paid',this.value)" oninput="updateCard('${card.id}','paid',this.value)"/></td>
-      <td><input class="week-input" type="text" inputmode="decimal" value="${w1||''}" placeholder="0"
-        
-        onchange="updateCard('${card.id}','w1',this.value)" oninput="updateCard('${card.id}','w1',this.value)"/></td>
-      <td><input class="week-input" type="text" inputmode="decimal" value="${w2||''}" placeholder="0"
-        
-        onchange="updateCard('${card.id}','w2',this.value)" oninput="updateCard('${card.id}','w2',this.value)"/></td>
-      <td><input class="week-input" type="text" inputmode="decimal" value="${w3||''}" placeholder="0"
-        
-        onchange="updateCard('${card.id}','w3',this.value)" oninput="updateCard('${card.id}','w3',this.value)"/></td>
-      <td><input class="week-input" type="text" inputmode="decimal" value="${w4||''}" placeholder="0"
-        
-        onchange="updateCard('${card.id}','w4',this.value)" oninput="updateCard('${card.id}','w4',this.value)"/></td>
-      <td><input class="week-input" type="text" inputmode="decimal" value="${w5||''}" placeholder="0"
-        
-        onchange="updateCard('${card.id}','w5',this.value)" oninput="updateCard('${card.id}','w5',this.value)"/></td>
+      <td><input class="week-input" type="text" inputmode="decimal" value="${p||''}" placeholder=""
+        onblur="updateCard('${card.id}','paid',this.value)"/></td>
+      <td><input class="week-input" type="text" inputmode="decimal" value="${w1||''}" placeholder=""
+        onblur="updateCard('${card.id}','w1',this.value)"/></td>
+      <td><input class="week-input" type="text" inputmode="decimal" value="${w2||''}" placeholder=""
+        onblur="updateCard('${card.id}','w2',this.value)"/></td>
+      <td><input class="week-input" type="text" inputmode="decimal" value="${w3||''}" placeholder=""
+        onblur="updateCard('${card.id}','w3',this.value)"/></td>
+      <td><input class="week-input" type="text" inputmode="decimal" value="${w4||''}" placeholder=""
+        onblur="updateCard('${card.id}','w4',this.value)"/></td>
+      <td><input class="week-input" type="text" inputmode="decimal" value="${w5||''}" placeholder=""
+        onblur="updateCard('${card.id}','w5',this.value)"/></td>
       <td class="ct-total">${tot>0?fmt(tot):'—'}</td>`;
     tbody.appendChild(tr);
   });
@@ -759,8 +751,8 @@ function renderCats(){
         ${cat.icon} ${cat.name}
       </td>
       <td style="text-align:right">
-        <input class="sp-input" type="number" step="0.01" value="${amt||''}" placeholder="0.00"
-          onchange="updateCat('${cat.id}',this.value)" oninput="updateCat('${cat.id}',this.value)"/>
+        <input class="sp-input" type="text" inputmode="decimal" value="${amt||''}" placeholder="0.00"
+          onblur="updateCat('${cat.id}',this.value)"/>
       </td>
       <td style="text-align:right;color:var(--muted)">${pCards}%</td>
       <td style="text-align:right;color:var(--muted)">${pInc}%</td>`;
