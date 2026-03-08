@@ -153,9 +153,11 @@ table.ct tr:hover td{background:rgba(108,99,255,.05);}
 .due-badge{font-size:.65rem;color:var(--muted);}
 .week-input{
   background:rgba(255,255,255,.04);border:1px solid var(--border);
-  color:var(--text);padding:2px 5px;border-radius:4px;width:72px;
-  font-size:11.5px;text-align:right;outline:none;transition:border-color .15s;
+  color:var(--text);padding:3px 6px;border-radius:4px;width:88px;
+  font-size:12px;text-align:right;outline:none;transition:border-color .15s;
+  -moz-appearance:textfield;
 }
+.week-input::-webkit-outer-spin-button,.week-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .week-input:focus{border-color:var(--accent);}
 .ct-total{font-weight:700;color:var(--yellow);}
 tr.ct-foot td{background:#1a1d35;font-weight:700;border-top:2px solid var(--border);padding:6px 7px;}
@@ -347,13 +349,13 @@ tr.sp-foot td{background:#1a1d35;font-weight:700;border-top:2px solid var(--bord
           <tr>
             <th style="min-width:145px;text-align:left">Card</th>
             <th style="width:42px">Due</th>
-            <th style="width:72px">Paid</th>
-            <th style="width:72px" id="wh1">Week01</th>
-            <th style="width:72px" id="wh2">Week02</th>
-            <th style="width:72px" id="wh3">Week03</th>
-            <th style="width:72px" id="wh4">Week04</th>
-            <th style="width:72px" id="wh5">Week05</th>
-            <th style="width:80px">Total</th>
+            <th style="width:90px">Paid</th>
+            <th style="width:90px" id="wh1">Week01</th>
+            <th style="width:90px" id="wh2">Week02</th>
+            <th style="width:90px" id="wh3">Week03</th>
+            <th style="width:90px" id="wh4">Week04</th>
+            <th style="width:90px" id="wh5">Week05</th>
+            <th style="width:90px">Total</th>
           </tr>
         </thead>
         <tbody id="ctBody"></tbody>
@@ -680,17 +682,17 @@ function renderCards(){
     tr.innerHTML=`
       <td><div class="card-name"><span class="card-dot" style="background:${card.color}"></span>${card.name}</div></td>
       <td class="due-badge">${card.due}</td>
-      <td><input class="week-input" type="number" step="0.01" value="${p||''}" placeholder="0"
+      <td><input class="week-input" type="number" step="0.01" value="${p||''}" placeholder=""
         onchange="updateCard('${card.id}','paid',this.value)" oninput="updateCard('${card.id}','paid',this.value)"/></td>
-      <td><input class="week-input" type="number" step="0.01" value="${w1||''}" placeholder="0"
+      <td><input class="week-input" type="number" step="0.01" value="${w1||''}" placeholder=""
         onchange="updateCard('${card.id}','w1',this.value)" oninput="updateCard('${card.id}','w1',this.value)"/></td>
-      <td><input class="week-input" type="number" step="0.01" value="${w2||''}" placeholder="0"
+      <td><input class="week-input" type="number" step="0.01" value="${w2||''}" placeholder=""
         onchange="updateCard('${card.id}','w2',this.value)" oninput="updateCard('${card.id}','w2',this.value)"/></td>
-      <td><input class="week-input" type="number" step="0.01" value="${w3||''}" placeholder="0"
+      <td><input class="week-input" type="number" step="0.01" value="${w3||''}" placeholder=""
         onchange="updateCard('${card.id}','w3',this.value)" oninput="updateCard('${card.id}','w3',this.value)"/></td>
-      <td><input class="week-input" type="number" step="0.01" value="${w4||''}" placeholder="0"
+      <td><input class="week-input" type="number" step="0.01" value="${w4||''}" placeholder=""
         onchange="updateCard('${card.id}','w4',this.value)" oninput="updateCard('${card.id}','w4',this.value)"/></td>
-      <td><input class="week-input" type="number" step="0.01" value="${w5||''}" placeholder="0"
+      <td><input class="week-input" type="number" step="0.01" value="${w5||''}" placeholder=""
         onchange="updateCard('${card.id}','w5',this.value)" oninput="updateCard('${card.id}','w5',this.value)"/></td>
       <td class="ct-total">${tot>0?fmt(tot):'—'}</td>`;
     tbody.appendChild(tr);
