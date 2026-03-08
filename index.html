@@ -500,16 +500,36 @@ function buildDefaultMonth(salary){
   };
 }
 
+const DATA_VERSION=5;
 function loadState(){
+  // URL reset: ?reset=1 clears all data
+  if(location.search.includes('reset=1')){
+    localStorage.removeItem('zonicaV4');
+    localStorage.removeItem('zonicaV5');
+    history.replaceState(null,'',location.pathname);
+  }
   try{
-    const s=localStorage.getItem('zonicaV4');
-    if(s){const p=JSON.parse(s);if(p&&p.months&&Object.keys(p.months).length>0)return p;}
+    const s=localStorage.getItem('zonicaV5');
+    if(s){
+      const p=JSON.parse(s);
+      // Validate: check no actual value exceeds 1 million (corruption guard)
+      if(p&&p.months){
+        let corrupt=false;
+        Object.values(p.months).forEach(m=>{
+          if(m.actuals)m.actuals.forEach(v=>{if(parseFloat(v)>1000000)corrupt=true;});
+        });
+        if(!corrupt)return p;
+        // Corrupted — clear and start fresh
+        localStorage.removeItem('zonicaV5');
+        console.warn('Corrupted data cleared, starting fresh');
+      }
+    }
   }catch(e){}
   return {currentMonth:'Mar 2026',months:{'Mar 2026':buildDefaultMonth(11300)}};
 }
 
 let S=loadState();
-function save(){try{localStorage.setItem('zonicaV4',JSON.stringify(S));}catch(e){}}
+function save(){try{localStorage.setItem('zonicaV5',JSON.stringify(S));}catch(e){}}
 function fmt(n){return '$'+(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function pct(a,b){return b>0?Math.round(a/b*100):0;}
 function getFixedTotal(){
