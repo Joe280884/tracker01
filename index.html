@@ -102,8 +102,9 @@ table.fc tr:hover td{background:rgba(108,99,255,.05);}
 
 .actual-input{
   background:rgba(255,255,255,.04);border:1px solid var(--border);
-  color:var(--text);padding:3px 6px;border-radius:4px;width:82px;
-  font-size:11.5px;text-align:right;outline:none;transition:border-color .15s;
+  color:var(--text);padding:4px 8px;border-radius:4px;width:88px;
+  font-size:13px;text-align:right;outline:none;transition:border-color .15s;
+  box-sizing:border-box;
 }
 .fc-input{
   background:transparent;border:1px solid transparent;
@@ -153,11 +154,10 @@ table.ct tr:hover td{background:rgba(108,99,255,.05);}
 .due-badge{font-size:.65rem;color:var(--muted);}
 .week-input{
   background:rgba(255,255,255,.04);border:1px solid var(--border);
-  color:var(--text);padding:3px 6px;border-radius:4px;width:88px;
-  font-size:12px;text-align:right;outline:none;transition:border-color .15s;
-  -moz-appearance:textfield;
+  color:var(--text);padding:4px 8px;border-radius:4px;width:88px;
+  font-size:13px;text-align:right;outline:none;transition:border-color .15s;
+  box-sizing:border-box;
 }
-.week-input::-webkit-outer-spin-button,.week-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .week-input:focus{border-color:var(--accent);}
 .ct-total{font-weight:700;color:var(--yellow);}
 tr.ct-foot td{background:#1a1d35;font-weight:700;border-top:2px solid var(--border);padding:6px 7px;}
@@ -611,15 +611,17 @@ function renderFixed(){
         style="font-size:.65rem;font-weight:600"
         onchange="updateFixedCell(${i},'banks',this.value)" oninput="updateFixedCell(${i},'banks',this.value)"/></td>
       <td style="text-align:right">
-        <input class="actual-input" type="number" step="0.01" value="${expVal>0?expVal:''}"
+        <input class="actual-input" type="text" inputmode="decimal" value="${expVal>0?expVal:''}"
           placeholder="0.00" style="color:var(--muted)"
+          onkeypress="return /[\d.]/.test(event.key)"
           onchange="updateFixedExp(${i},this.value)" oninput="updateFixedExp(${i},this.value)"/>
       </td>
       <td style="text-align:right">
-        <input class="actual-input ${over?'over':'ok'}" type="number" step="0.01"
+        <input class="actual-input ${over?'over':'ok'}" type="text" inputmode="decimal"
           value="${actual>0?actual:''}"
           placeholder="${expVal>0?expVal.toFixed(2):'0.00'}"
           data-idx="${i}"
+          onkeypress="return /[\d.]/.test(event.key)"
           onchange="updateActual(${i},this.value)"
           oninput="updateActual(${i},this.value)"/>
       </td>`;
@@ -682,17 +684,23 @@ function renderCards(){
     tr.innerHTML=`
       <td><div class="card-name"><span class="card-dot" style="background:${card.color}"></span>${card.name}</div></td>
       <td class="due-badge">${card.due}</td>
-      <td><input class="week-input" type="number" step="0.01" value="${p||''}" placeholder=""
+      <td><input class="week-input" type="text" inputmode="decimal" value="${p||''}" placeholder="0"
+        onkeypress="return /[\d.]/.test(event.key)"
         onchange="updateCard('${card.id}','paid',this.value)" oninput="updateCard('${card.id}','paid',this.value)"/></td>
-      <td><input class="week-input" type="number" step="0.01" value="${w1||''}" placeholder=""
+      <td><input class="week-input" type="text" inputmode="decimal" value="${w1||''}" placeholder="0"
+        onkeypress="return /[\d.]/.test(event.key)"
         onchange="updateCard('${card.id}','w1',this.value)" oninput="updateCard('${card.id}','w1',this.value)"/></td>
-      <td><input class="week-input" type="number" step="0.01" value="${w2||''}" placeholder=""
+      <td><input class="week-input" type="text" inputmode="decimal" value="${w2||''}" placeholder="0"
+        onkeypress="return /[\d.]/.test(event.key)"
         onchange="updateCard('${card.id}','w2',this.value)" oninput="updateCard('${card.id}','w2',this.value)"/></td>
-      <td><input class="week-input" type="number" step="0.01" value="${w3||''}" placeholder=""
+      <td><input class="week-input" type="text" inputmode="decimal" value="${w3||''}" placeholder="0"
+        onkeypress="return /[\d.]/.test(event.key)"
         onchange="updateCard('${card.id}','w3',this.value)" oninput="updateCard('${card.id}','w3',this.value)"/></td>
-      <td><input class="week-input" type="number" step="0.01" value="${w4||''}" placeholder=""
+      <td><input class="week-input" type="text" inputmode="decimal" value="${w4||''}" placeholder="0"
+        onkeypress="return /[\d.]/.test(event.key)"
         onchange="updateCard('${card.id}','w4',this.value)" oninput="updateCard('${card.id}','w4',this.value)"/></td>
-      <td><input class="week-input" type="number" step="0.01" value="${w5||''}" placeholder=""
+      <td><input class="week-input" type="text" inputmode="decimal" value="${w5||''}" placeholder="0"
+        onkeypress="return /[\d.]/.test(event.key)"
         onchange="updateCard('${card.id}','w5',this.value)" oninput="updateCard('${card.id}','w5',this.value)"/></td>
       <td class="ct-total">${tot>0?fmt(tot):'—'}</td>`;
     tbody.appendChild(tr);
