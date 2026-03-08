@@ -613,7 +613,7 @@ function renderFixed(){
       <td style="text-align:right">
         <input class="actual-input" type="text" inputmode="decimal" value="${expVal>0?expVal:''}"
           placeholder="0.00" style="color:var(--muted)"
-          onkeypress="return /[\d.]/.test(event.key)"
+          
           onchange="updateFixedExp(${i},this.value)" oninput="updateFixedExp(${i},this.value)"/>
       </td>
       <td style="text-align:right">
@@ -621,7 +621,7 @@ function renderFixed(){
           value="${actual>0?actual:''}"
           placeholder="${expVal>0?expVal.toFixed(2):'0.00'}"
           data-idx="${i}"
-          onkeypress="return /[\d.]/.test(event.key)"
+          
           onchange="updateActual(${i},this.value)"
           oninput="updateActual(${i},this.value)"/>
       </td>`;
@@ -685,22 +685,22 @@ function renderCards(){
       <td><div class="card-name"><span class="card-dot" style="background:${card.color}"></span>${card.name}</div></td>
       <td class="due-badge">${card.due}</td>
       <td><input class="week-input" type="text" inputmode="decimal" value="${p||''}" placeholder="0"
-        onkeypress="return /[\d.]/.test(event.key)"
+        
         onchange="updateCard('${card.id}','paid',this.value)" oninput="updateCard('${card.id}','paid',this.value)"/></td>
       <td><input class="week-input" type="text" inputmode="decimal" value="${w1||''}" placeholder="0"
-        onkeypress="return /[\d.]/.test(event.key)"
+        
         onchange="updateCard('${card.id}','w1',this.value)" oninput="updateCard('${card.id}','w1',this.value)"/></td>
       <td><input class="week-input" type="text" inputmode="decimal" value="${w2||''}" placeholder="0"
-        onkeypress="return /[\d.]/.test(event.key)"
+        
         onchange="updateCard('${card.id}','w2',this.value)" oninput="updateCard('${card.id}','w2',this.value)"/></td>
       <td><input class="week-input" type="text" inputmode="decimal" value="${w3||''}" placeholder="0"
-        onkeypress="return /[\d.]/.test(event.key)"
+        
         onchange="updateCard('${card.id}','w3',this.value)" oninput="updateCard('${card.id}','w3',this.value)"/></td>
       <td><input class="week-input" type="text" inputmode="decimal" value="${w4||''}" placeholder="0"
-        onkeypress="return /[\d.]/.test(event.key)"
+        
         onchange="updateCard('${card.id}','w4',this.value)" oninput="updateCard('${card.id}','w4',this.value)"/></td>
       <td><input class="week-input" type="text" inputmode="decimal" value="${w5||''}" placeholder="0"
-        onkeypress="return /[\d.]/.test(event.key)"
+        
         onchange="updateCard('${card.id}','w5',this.value)" oninput="updateCard('${card.id}','w5',this.value)"/></td>
       <td class="ct-total">${tot>0?fmt(tot):'—'}</td>`;
     tbody.appendChild(tr);
