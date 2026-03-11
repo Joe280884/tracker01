@@ -56,6 +56,31 @@ select.month-sel{background:var(--s2);border:1px solid var(--border);color:var(-
 .edit-btn{position:absolute;top:7px;right:7px;background:none;border:1px solid var(--border);color:var(--muted);padding:1px 6px;border-radius:4px;font-size:.58rem;cursor:pointer;}
 .edit-btn:hover{border-color:var(--accent);color:var(--accent);}
 
+/* ── TAB NAV ── */
+.tab-nav{display:flex;gap:0;border-bottom:2px solid var(--border);background:var(--s1);padding:0 18px;}
+.tab-btn{padding:9px 20px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;letter-spacing:.3px;}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-btn:hover:not(.active){color:var(--text);}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+
+/* ── TRANSACTION LOG ── */
+.txn-wrap{padding:14px 18px;overflow-x:auto;}
+.txn-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;min-width:900px;}
+.txn-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.txn-card-hdr{background:linear-gradient(135deg,var(--accent),#4a90d9);padding:8px 12px;text-align:center;font-size:.82rem;font-weight:700;letter-spacing:.5px;}
+.txn-tbl{width:100%;border-collapse:collapse;font-size:11px;}
+.txn-tbl th{background:#1a1d35;color:var(--muted);font-size:.58rem;text-transform:uppercase;letter-spacing:.5px;padding:5px 6px;text-align:center;border-bottom:1px solid var(--border);}
+.txn-tbl th:first-child{text-align:center;width:36px;}
+.txn-tbl td{padding:2px 4px;border-bottom:1px solid rgba(255,255,255,.025);text-align:center;}
+.txn-tbl td:first-child{color:var(--muted);font-size:.65rem;}
+.txn-tbl tr:hover td{background:rgba(108,99,255,.06);}
+.txn-inp{width:100%;background:transparent;border:none;color:var(--text);font-size:11px;text-align:right;padding:2px 4px;outline:none;}
+.txn-inp:focus{background:rgba(108,99,255,.12);border-radius:3px;}
+.txn-sum-row td{background:#ffd166!important;color:#1a1d35!important;font-weight:700;font-size:.75rem;padding:5px 6px;}
+.txn-sum-row td:first-child{text-align:right;font-size:.65rem;letter-spacing:.3px;}
+.txn-note{font-size:.68rem;color:var(--muted);margin-top:10px;text-align:center;padding:6px;}
+
 /* ── MAIN LAYOUT ── */
 .main-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:start;}
 .left-col{border-right:2px solid var(--border);padding:14px 16px;position:sticky;top:52px;max-height:calc(100vh - 52px);overflow-y:auto;}
@@ -297,6 +322,15 @@ tr.sp-foot td{background:#1a1d35;font-weight:700;border-top:2px solid var(--bord
   </div>
 </div>
 
+<!-- ══ TAB NAVIGATION ══ -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('tracker')">📊 Tracker</button>
+  <button class="tab-btn" onclick="switchTab('txnlog')">🧾 Transaction Log</button>
+</div>
+
+<!-- ══ TAB: TRACKER ══ -->
+<div class="tab-pane active" id="tab-tracker">
+
 <!-- ══ TOP SECTION: LEFT = FIXED CHARGES | RIGHT = CARDS ══ -->
 <div class="main-wrap">
 
@@ -418,6 +452,19 @@ tr.sp-foot td{background:#1a1d35;font-weight:700;border-top:2px solid var(--bord
   </div>
 </div>
 
+</div><!-- end tab-tracker -->
+
+<!-- ══ TAB: TRANSACTION LOG ══ -->
+<div class="tab-pane" id="tab-txnlog">
+  <div class="txn-wrap">
+    <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+      <h2 style="font-size:.9rem;font-weight:700">Transaction Log &mdash; <span id="txnMonthLabel">Mar 2026</span></h2>
+      <span class="txn-note" style="margin:0">Enter individual transactions per card &rarr; totals auto-sum below each table</span>
+    </div>
+    <div class="txn-grid" id="txnGrid"></div>
+  </div>
+</div><!-- end tab-txnlog -->
+
 <script>
 // ═══════════════════════════════════════════
 // STATIC DATA
@@ -490,6 +537,21 @@ const DEFAULT_CATS = [
 
 function mkCardData(){ return DEFAULT_CARDS.map(c=>({...c,paid:0,w1:0,w2:0,w3:0,w4:0,w5:0})); }
 function mkCatData(){ return DEFAULT_CATS.map(c=>({...c,amt:0})); }
+
+// Transaction Log cards: 4 main cards, each with 100 rows x 3 categories
+const TXN_CARDS = [
+  {id:'txn_apple', name:'Apple',      color:'#aaa',    rows:100},
+  {id:'txn_bofa',  name:'Bofa Jones', color:'#e91e63', rows:100},
+  {id:'txn_citi',  name:'Citi',       color:'#00bcd4', rows:100},
+  {id:'txn_chase', name:'Chase',      color:'#ffd166', rows:100},
+];
+const TXN_COLS = ['Groceries','Food','Gas'];
+function mkTxnData(){
+  return TXN_CARDS.map(c=>({
+    id:c.id,
+    rows: Array.from({length:100},()=>({groc:'',food:'',gas:''}))
+  }));
+}
 function buildDefaultMonth(salary){
   return {
     salary,
@@ -497,6 +559,7 @@ function buildDefaultMonth(salary){
     cards: mkCardData(),
     cats: mkCatData(),
     weekLabels:['Week01','Week02','Week03','Week04','Week05'],
+    txnlog: mkTxnData(),
   };
 }
 
@@ -885,6 +948,95 @@ function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── TAB SWITCHING ──
+function switchTab(name){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if(name==='txnlog') renderTxnLog();
+}
+
+// ── TRANSACTION LOG ──
+function updateTxn(cardIdx, rowIdx, col, val){
+  const m = S.months[S.currentMonth];
+  if(!m.txnlog) m.txnlog = mkTxnData();
+  m.txnlog[cardIdx].rows[rowIdx][col] = val;
+  save();
+  // Update only the sum row for this card
+  updateTxnSums(cardIdx);
+}
+
+function updateTxnSums(cardIdx){
+  const m = S.months[S.currentMonth];
+  if(!m.txnlog) return;
+  const rows = m.txnlog[cardIdx].rows;
+  const cols = ['groc','food','gas'];
+  cols.forEach(col=>{
+    const total = rows.reduce((s,r)=>s+(parseFloat(r[col])||0),0);
+    const el = document.getElementById('txnsum_'+cardIdx+'_'+col);
+    if(el) el.textContent = total>0 ? '$'+total.toFixed(2) : '—';
+  });
+  // Grand total for this card
+  const grand = rows.reduce((s,r)=>
+    s+(parseFloat(r.groc)||0)+(parseFloat(r.food)||0)+(parseFloat(r.gas)||0),0);
+  const elG = document.getElementById('txnsum_'+cardIdx+'_total');
+  if(elG) elG.textContent = grand>0 ? 'Sum = $'+grand.toFixed(2) : 'Sum =';
+}
+
+function renderTxnLog(){
+  const m = S.months[S.currentMonth];
+  if(!m.txnlog) m.txnlog = mkTxnData();
+  document.getElementById('txnMonthLabel').textContent = S.currentMonth;
+  const grid = document.getElementById('txnGrid');
+  grid.innerHTML = '';
+  TXN_CARDS.forEach((card, ci)=>{
+    const txnCard = m.txnlog[ci];
+    let rowsHtml = '';
+    for(let r=0;r<100;r++){
+      const row = txnCard.rows[r] || {groc:'',food:'',gas:''};
+      rowsHtml += `<tr>
+        <td>${r+1}</td>
+        <td><input class="txn-inp" type="text" inputmode="decimal" value="${row.groc||''}" placeholder="" onblur="updateTxn(${ci},${r},'groc',this.value)"/></td>
+        <td><input class="txn-inp" type="text" inputmode="decimal" value="${row.food||''}" placeholder="" onblur="updateTxn(${ci},${r},'food',this.value)"/></td>
+        <td><input class="txn-inp" type="text" inputmode="decimal" value="${row.gas||''}" placeholder="" onblur="updateTxn(${ci},${r},'gas',this.value)"/></td>
+      </tr>`;
+    }
+    // Pre-compute sums
+    const rows = txnCard.rows;
+    const grocSum = rows.reduce((s,r)=>s+(parseFloat(r.groc)||0),0);
+    const foodSum = rows.reduce((s,r)=>s+(parseFloat(r.food)||0),0);
+    const gasSum  = rows.reduce((s,r)=>s+(parseFloat(r.gas)||0),0);
+    const grandSum = grocSum+foodSum+gasSum;
+    grid.innerHTML += `
+      <div class="txn-card">
+        <div class="txn-card-hdr" style="background:linear-gradient(135deg,${card.color}99,${card.color}44)">${card.name}</div>
+        <div style="max-height:520px;overflow-y:auto">
+          <table class="txn-tbl">
+            <thead><tr>
+              <th>##</th>
+              <th>Groceries</th>
+              <th>Food</th>
+              <th>Gas</th>
+            </tr></thead>
+            <tbody>${rowsHtml}</tbody>
+            <tfoot>
+              <tr class="txn-sum-row">
+                <td>Sum =</td>
+                <td id="txnsum_${ci}_groc">${grocSum>0?'$'+grocSum.toFixed(2):'—'}</td>
+                <td id="txnsum_${ci}_food">${foodSum>0?'$'+foodSum.toFixed(2):'—'}</td>
+                <td id="txnsum_${ci}_gas">${gasSum>0?'$'+gasSum.toFixed(2):'—'}</td>
+              </tr>
+              <tr style="background:#1a1d35">
+                <td colspan="4" style="text-align:center;padding:5px;font-size:.7rem;color:var(--yellow);font-weight:600" id="txnsum_${ci}_total">${grandSum>0?'Sum = $'+grandSum.toFixed(2):'Sum ='}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>`;
+  });
 }
 
 // ── RENDER ALL ──
