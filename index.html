@@ -81,6 +81,28 @@ select.month-sel{background:var(--s2);border:1px solid var(--border);color:var(-
 .txn-sum-row td:first-child{text-align:right;font-size:.65rem;letter-spacing:.3px;}
 .txn-note{font-size:.68rem;color:var(--muted);margin-top:10px;text-align:center;padding:6px;}
 
+/* ── CREDENTIALS ── */
+.creds-wrap{max-width:1100px;margin:0 auto;}
+.creds-section{margin-bottom:28px;}
+.creds-section-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--border);}
+.creds-section-hdr h3{font-size:.9rem;font-weight:700;color:var(--text);min-width:120px;}
+.creds-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.creds-tbl th{background:#1a1d35;color:var(--muted);font-size:.6rem;text-transform:uppercase;letter-spacing:.6px;padding:6px 10px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;}
+.creds-tbl td{padding:3px 6px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle;}
+.creds-tbl tr:hover td{background:rgba(108,99,255,.06);}
+.creds-tbl tr.reserved td{opacity:.45;}
+.creds-inp{width:100%;background:transparent;border:none;color:var(--text);font-size:12px;padding:3px 4px;outline:none;min-width:80px;}
+.creds-inp:focus{background:rgba(108,99,255,.12);border-radius:3px;}
+.creds-inp.hl-yellow{color:#ffd166;font-weight:600;}
+.creds-inp.hl-cyan{color:#00bcd4;font-weight:600;}
+.creds-inp.hl-pink{color:#e91e63;font-weight:600;}
+.creds-inp.hl-green{color:#4caf50;font-weight:600;}
+.creds-inp.hl-orange{color:#ff9800;font-weight:600;}
+.creds-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.6rem;font-weight:700;letter-spacing:.4px;text-transform:uppercase;}
+.badge-cc{background:#ffd16622;color:#ffd166;border:1px solid #ffd16644;}
+.badge-email{background:#00bcd422;color:#00bcd4;border:1px solid #00bcd444;}
+.badge-misc{background:#ab47bc22;color:#ab47bc;border:1px solid #ab47bc44;}
+
 /* ── MAIN LAYOUT ── */
 .main-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:start;}
 .left-col{border-right:2px solid var(--border);padding:14px 16px;position:sticky;top:52px;max-height:calc(100vh - 52px);overflow-y:auto;}
@@ -326,6 +348,7 @@ tr.sp-foot td{background:#1a1d35;font-weight:700;border-top:2px solid var(--bord
 <div class="tab-nav">
   <button class="tab-btn active" onclick="switchTab('tracker')">📊 Tracker</button>
   <button class="tab-btn" onclick="switchTab('txnlog')">🧾 Transaction Log</button>
+  <button class="tab-btn" onclick="switchTab('creds')">🔐 Credentials</button>
 </div>
 
 <!-- ══ TAB: TRACKER ══ -->
@@ -464,6 +487,11 @@ tr.sp-foot td{background:#1a1d35;font-weight:700;border-top:2px solid var(--bord
     <div class="txn-grid" id="txnGrid"></div>
   </div>
 </div><!-- end tab-txnlog -->
+
+<!-- ══ TAB: CREDENTIALS ══ -->
+<div class="tab-pane" id="tab-creds">
+  <div id="credsRoot" style="padding:16px 20px"></div>
+</div><!-- end tab-creds -->
 
 <script>
 // ═══════════════════════════════════════════
@@ -950,6 +978,113 @@ function toast(msg){
   setTimeout(()=>t.classList.remove('show'),2500);
 }
 
+// ── CREDENTIALS DATA ──
+const DEFAULT_CREDS = {
+  cc: [
+    {name:'BOFA',         sub:'Bofa / Royal Carr / Spirit', pwd:'bofa8#',   acc:'',       hl:'pink'},
+    {name:'Citi',         sub:'Costco',                    pwd:'citi8#',   acc:'',       hl:'cyan'},
+    {name:'Chase',        sub:'Chase / Amazon / United',   pwd:'chse8#',   acc:'joe280884', hl:'yellow'},
+    {name:'Creditunion',  sub:'',                          pwd:'mcu8#',    acc:'',       hl:'pink'},
+    {name:'Bestbuy',      sub:'',                          pwd:'m08',      acc:'',       hl:''},
+    {name:'Wayfair',      sub:'',                          pwd:'wr8?',     acc:'',       hl:''},
+    {name:'Oldnavy',      sub:'',                          pwd:'bys8#',    acc:'',       hl:''},
+    {name:'American Express', sub:'',                      pwd:'corporate8#', acc:'',   hl:'pink'},
+    {name:'Ancy Bofa',    sub:'',                          pwd:'Bofar09#', acc:'mi1325', hl:'cyan'},
+    {name:'Ancy chase',   sub:'',                          pwd:'chse8#',   acc:'mca07131990', hl:'cyan'},
+  ],
+  emails: [
+    {name:'Meta',         pwd:'Rescap',  acc:'',    hl:''},
+    {name:'Agni',         pwd:'PD5',     acc:'',    hl:''},
+    {name:'PCB/Linkedin', pwd:'Pw09#',   acc:'',    hl:''},
+    {name:'FB',           pwd:'08#',     acc:'',    hl:''},
+    {name:'USA visa',     pwd:'visa8#',  acc:'J28', hl:''},
+  ],
+  misc: [
+    {name:'Xfinity',          pwd:'issue09#',   acc:'RZ9#',                    hl:'yellow'},
+    {name:'Fastrak',          pwd:'toll08#',    acc:'J28',                     hl:''},
+    {name:'Evergreen mobile', pwd:'mo08#',      acc:'J28',                     hl:'pink'},
+    {name:'Xfinity',          pwd:'modem08#',   acc:'ancymonica.xfinity2025@gmail.com', hl:'yellow'},
+    {name:'PGE',              pwd:'R9#',        acc:'agni@gmail',              hl:''},
+    {name:'Schwab',           pwd:'Joe84',      acc:'R9#',                     hl:'green'},
+    {name:'Schwab',           pwd:'mt130790',   acc:'R9#',                     hl:'green'},
+    {name:'Macbook',          pwd:'',           acc:'y2509#',                  hl:''},
+    {name:'Swimming',         pwd:'SRVA',       acc:'RI9#',                    hl:'yellow', extra:'Rac-gmail'},
+    {name:'Hyundaifinance',   pwd:'Hyufin09#',  acc:'J28',                     hl:''},
+    {name:'VSP',              pwd:'RI9#',       acc:'Jonesee@meta.com',        hl:''},
+    {name:'Metlife legal',    pwd:'legal28#',   acc:'joeagni@gmail.com',       hl:''},
+    {name:'DMV',              pwd:'',           acc:'joeagni@gmail.com',       hl:''},
+  ]
+};
+
+function loadCreds(){
+  try{
+    const s=localStorage.getItem('zonicaCreds');
+    if(s) return JSON.parse(s);
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_CREDS));
+}
+function saveCreds(data){ try{localStorage.setItem('zonicaCreds',JSON.stringify(data));}catch(e){} }
+let CREDS = loadCreds();
+
+function updateCred(section, idx, field, val){
+  CREDS[section][idx][field] = val;
+  saveCreds(CREDS);
+}
+
+function renderCreds(){
+  const root = document.getElementById('credsRoot');
+  const sections = [
+    {key:'cc',     label:'Credit Cards', badge:'badge-cc',    cols:['CC / Bank','Sub-cards','Password','On Acc']},
+    {key:'emails', label:'Emails',       badge:'badge-email', cols:['Service','Password','Account']},
+    {key:'misc',   label:'Misc',         badge:'badge-misc',  cols:['Service','Password','Account','Extra']},
+  ];
+  let html = '<div class="creds-wrap">';
+  sections.forEach(sec=>{
+    const rows = CREDS[sec.key];
+    // Add 10 reserved blank rows
+    const allRows = [...rows];
+    const reservedCount = 10;
+    for(let i=0;i<reservedCount;i++) allRows.push({name:'',pwd:'',acc:'',sub:'',extra:'',hl:'',_reserved:true});
+    html += `<div class="creds-section">
+      <div class="creds-section-hdr">
+        <h3>${sec.label}</h3>
+        <span class="creds-badge ${sec.badge}">${rows.length} entries + ${reservedCount} reserved</span>
+      </div>
+      <div style="overflow-x:auto">
+      <table class="creds-tbl">
+        <thead><tr>${sec.cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>`;
+    allRows.forEach((row,i)=>{
+      const isRes = i >= rows.length;
+      const hl = row.hl ? 'hl-'+row.hl : '';
+      if(sec.key==='cc'){
+        html += `<tr class="${isRes?'reserved':''}">
+          <td><input class="creds-inp ${hl}" type="text" value="${row.name||''}" placeholder="${isRes?'Reserved...':''}" onblur="updateCred('cc',${i},'name',this.value)"/></td>
+          <td><input class="creds-inp" type="text" value="${row.sub||''}" placeholder="" onblur="updateCred('cc',${i},'sub',this.value)"/></td>
+          <td><input class="creds-inp" type="text" value="${row.pwd||''}" placeholder="" onblur="updateCred('cc',${i},'pwd',this.value)"/></td>
+          <td><input class="creds-inp" type="text" value="${row.acc||''}" placeholder="" onblur="updateCred('cc',${i},'acc',this.value)"/></td>
+        </tr>`;
+      } else if(sec.key==='emails'){
+        html += `<tr class="${isRes?'reserved':''}">
+          <td><input class="creds-inp ${hl}" type="text" value="${row.name||''}" placeholder="${isRes?'Reserved...':''}" onblur="updateCred('emails',${i},'name',this.value)"/></td>
+          <td><input class="creds-inp" type="text" value="${row.pwd||''}" placeholder="" onblur="updateCred('emails',${i},'pwd',this.value)"/></td>
+          <td><input class="creds-inp" type="text" value="${row.acc||''}" placeholder="" onblur="updateCred('emails',${i},'acc',this.value)"/></td>
+        </tr>`;
+      } else {
+        html += `<tr class="${isRes?'reserved':''}">
+          <td><input class="creds-inp ${hl}" type="text" value="${row.name||''}" placeholder="${isRes?'Reserved...':''}" onblur="updateCred('misc',${i},'name',this.value)"/></td>
+          <td><input class="creds-inp" type="text" value="${row.pwd||''}" placeholder="" onblur="updateCred('misc',${i},'pwd',this.value)"/></td>
+          <td><input class="creds-inp" type="text" value="${row.acc||''}" placeholder="" onblur="updateCred('misc',${i},'acc',this.value)"/></td>
+          <td><input class="creds-inp" type="text" value="${row.extra||''}" placeholder="" onblur="updateCred('misc',${i},'extra',this.value)"/></td>
+        </tr>`;
+      }
+    });
+    html += '</tbody></table></div></div>';
+  });
+  html += '</div>';
+  root.innerHTML = html;
+}
+
 // ── TAB SWITCHING ──
 function switchTab(name){
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
@@ -957,6 +1092,7 @@ function switchTab(name){
   document.getElementById('tab-'+name).classList.add('active');
   event.currentTarget.classList.add('active');
   if(name==='txnlog') renderTxnLog();
+  if(name==='creds') renderCreds();
 }
 
 // ── TRANSACTION LOG ──
